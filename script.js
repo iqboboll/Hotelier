@@ -324,10 +324,8 @@ function loginUser({ name, email, role }) {
   buildNav(role);
   closeModal();
 
-  // If guest, auto-open booking modal
-  if (role === 'guest') {
-    setTimeout(() => openModal('modal-guest-booking'), 300);
-  }
+  // Hide the CTA strip at the bottom after valid login
+  hide($('#cta-strip'));
 }
 
 // Logout
@@ -336,6 +334,9 @@ $('#btn-logout').addEventListener('click', () => {
   hide($('#topnav'));
   $('#nav-links').innerHTML = '';
   closeModal();
+
+  // Show the CTA strip again
+  show($('#cta-strip'));
 
   // Reset form states
   $$('form').forEach(f => f.reset());
@@ -466,6 +467,49 @@ function initGuestBooking() {
 
     hide(form);
     show(successEl);
+    populateInvoice();
+  });
+
+  $('#btn-add-booking').addEventListener('click', () => {
+    form.reset();
+    clearErrors(form);
+    psRate.textContent   = '—';
+    psNights.textContent = '—';
+    psTotal.textContent  = '—';
+    hide(successEl);
+    show(form);
+    // Remove the guest info pre-fills if we want a fresh form
+    $('#book-guest-name').value = state.currentUser ? state.currentUser.name : '';
+    $('#book-guest-email').value = state.currentUser ? state.currentUser.email : '';
+  });
+
+  $('#btn-cancel-booking').addEventListener('click', () => {
+    state.booking = {
+      guestName: '', guestEmail: '', roomType: '', roomLabel: '',
+      checkin: '', checkout: '', nights: 0, rate: 0, total: 0, facilities: []
+    };
+    state.selectedFacilities = {};
+    
+    // reset facilities UI manually since updateFacilitySummary is private
+    const facSelectedList = $('#fac-selected-list');
+    const facTotal = $('#fac-total');
+    if (facSelectedList) facSelectedList.textContent = 'None';
+    if (facTotal) facTotal.textContent = '$0';
+    $$('.facility-card.selected').forEach(c => {
+      c.classList.remove('selected');
+      c.setAttribute('aria-pressed', 'false');
+      c.querySelector('.facility-badge').textContent = 'Add';
+    });
+
+    form.reset();
+    clearErrors(form);
+    psRate.textContent   = '—';
+    psNights.textContent = '—';
+    psTotal.textContent  = '—';
+    hide(successEl);
+    show(form);
+    closeModal();
+    showToast('Booking cancelled.');
     populateInvoice();
   });
 }

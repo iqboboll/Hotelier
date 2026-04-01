@@ -533,11 +533,17 @@
       </div>
       <button type="submit" class="btn btn-primary btn-full">Confirm Booking</button>
     </form>
-    <div id="booking-success" class="success-banner hidden" role="alert">
-      <span class="success-icon">✔</span>
-      <div>
-        <strong>Booking Confirmed!</strong>
-        <p id="booking-confirm-msg"></p>
+    <div id="booking-success" class="success-banner hidden" role="alert" style="flex-direction: column;">
+      <div style="display: flex; gap: 0.75rem;">
+        <span class="success-icon">✔</span>
+        <div>
+          <strong>Booking Confirmed!</strong>
+          <p id="booking-confirm-msg"></p>
+        </div>
+      </div>
+      <div style="margin-top:0.5rem; display:flex; gap:0.5rem; width:100%;">
+        <button type="button" id="btn-add-booking" class="btn btn-outline" style="flex:1; font-size: 0.8rem; padding: 0.5rem;">Add Another Booking</button>
+        <button type="button" id="btn-cancel-booking" class="btn btn-outline" style="flex:1; border-color: #c0392b; color: #c0392b; font-size: 0.8rem; padding: 0.5rem;">Cancel Booking</button>
       </div>
     </div>
   </div>
