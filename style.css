@@ -345,6 +345,8 @@ a {
 }
 
 .feature-icon {
+  font-style: italic;
+  color: var(--clr-brown-dark);
   font-size: 2.25rem;
   margin-bottom: 1rem;
 }
@@ -387,6 +389,8 @@ a {
 }
 
 .room-showcase-icon {
+  font-style: italic;
+  font-weight: bolder;
   font-size: 3.5rem;
   text-align: center;
   padding: 2rem 1rem 1rem;
@@ -673,6 +677,7 @@ a {
 }
 
 .footer-brand {
+  font-family: serif;
   font-size: 1.2rem;
   color: var(--clr-cream);
   margin-bottom: 0.5rem;
@@ -1785,7 +1790,7 @@ textarea {
 /* ── 18. PRINT STYLES ─────────────────────────────────────── */
 @media print {
 
-  body > *:not(#modal-billing) {
+  body>*:not(#modal-billing) {
     display: none !important;
   }
 
