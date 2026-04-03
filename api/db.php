@@ -1,10 +1,10 @@
 <?php
 // api/db.php
 
-$host = 'fdb1033.awardspace.net';
-$dbname = '4748018_hotelier';
-$username = '4748018_hotelier';
-$password = 'Hotelier@123';
+$host = 'localhost'; // Try 127.0.0.1 if localhost socket fails
+$dbname = 'Hotelier';
+$username = 'root';
+$password = '';
 $charset = 'utf8mb4';
 
 $dsn = "mysql:host=$host;dbname=$dbname;charset=$charset";
