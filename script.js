@@ -278,27 +278,79 @@ function initAuth() {
   }
 
   // Login submit
-  formLogin.addEventListener('submit', e => {
+  formLogin.addEventListener('submit', async e => {
     e.preventDefault();
     if (!validateForm(formLogin)) return;
 
-    const name  = $('#login-name').value.trim();
     const email = $('#login-email').value.trim();
+    const password = $('#login-password').value;
     const role  = $('#login-role').value;
+    
+    // Changing button state
+    const btn = formLogin.querySelector('button[type="submit"]');
+    const originalText = btn.textContent;
+    btn.textContent = 'Signing in...';
+    btn.disabled = true;
 
-    loginUser({ name, email, role });
+    try {
+      const res = await fetch('api/login.php', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email, password, role })
+      });
+      const data = await res.json();
+      
+      if (data.success) {
+        loginUser(data.user);
+        showToast('Successfully logged in.');
+      } else {
+        showError($('#login-password'), data.error || 'Login failed.');
+      }
+    } catch (err) {
+      showError($('#login-password'), 'Network error. Please try again.');
+    } finally {
+      btn.textContent = originalText;
+      btn.disabled = false;
+    }
   });
 
   // Register submit
-  formReg.addEventListener('submit', e => {
+  formReg.addEventListener('submit', async e => {
     e.preventDefault();
     if (!validateForm(formReg)) return;
 
     const name  = $('#reg-name').value.trim();
     const email = $('#reg-email').value.trim();
+    const password = $('#reg-password').value;
+    const phone = $('#reg-phone') ? $('#reg-phone').value.trim() : '';
     const role  = $('#reg-role').value;
 
-    loginUser({ name, email, role });
+    // Changing button state
+    const btn = formReg.querySelector('button[type="submit"]');
+    const originalText = btn.textContent;
+    btn.textContent = 'Registering...';
+    btn.disabled = true;
+
+    try {
+      const res = await fetch('api/register.php', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ name, email, password, phone, role })
+      });
+      const data = await res.json();
+      
+      if (data.success) {
+        loginUser(data.user);
+        showToast('Registration successful! You are now logged in.');
+      } else {
+        showError($('#reg-email'), data.error || 'Registration failed.');
+      }
+    } catch (err) {
+      showError($('#reg-email'), 'Network error. Please try again.');
+    } finally {
+      btn.textContent = originalText;
+      btn.disabled = false;
+    }
   });
 
   // One-click guest access — no fields needed
