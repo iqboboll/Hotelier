@@ -490,7 +490,7 @@ function initGuestBooking() {
   checkout.addEventListener('change', recalcPrice);
 
   // Form submit
-  form.addEventListener('submit', e => {
+  form.addEventListener('submit', async e => {
     e.preventDefault();
     if (!validateForm(form)) return;
 
@@ -500,13 +500,11 @@ function initGuestBooking() {
     const co     = new Date(checkout.value);
     const nights = Math.round((co - ci) / 86400000);
 
-    // Save to state for billing
-    state.booking = {
-      ...state.booking,
+    // EDIT: Prepare booking payload for backend
+    const bookingData = {
       guestName:  $('#book-guest-name').value.trim(),
-      guestEmail: $('#book-guest-email').value.trim(),
+      email:      $('#book-guest-email').value.trim(),
       roomType:   roomType.value,
-      roomLabel:  opt?.text || roomType.value,
       checkin:    checkin.value,
       checkout:   checkout.value,
       nights,
@@ -514,12 +512,42 @@ function initGuestBooking() {
       total:      rate * nights
     };
 
-    confirmMsg.textContent =
-      `${state.booking.guestName} — ${state.booking.roomLabel}, ${nights} night${nights !== 1 ? 's' : ''}. Total: $${state.booking.total.toLocaleString()}`;
+    try {
+      // EDIT: Execute async fetch to new PHP endpoint to create booking live in DB
+      const res = await fetch('api/booking_create.php', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(bookingData)
+      });
+      const data = await res.json();
+      
+      if (data.success) {
+        // Save to state for billing
+        state.booking = {
+          ...state.booking,
+          guestName:  bookingData.guestName,
+          guestEmail: bookingData.email,
+          roomType:   bookingData.roomType,
+          roomLabel:  opt?.text || bookingData.roomType,
+          checkin:    bookingData.checkin,
+          checkout:   bookingData.checkout,
+          nights,
+          rate,
+          total:      bookingData.total
+        };
 
-    hide(form);
-    show(successEl);
-    populateInvoice();
+        confirmMsg.textContent =
+          `${state.booking.guestName} — ${state.booking.roomLabel}, ${nights} night${nights !== 1 ? 's' : ''}. Total: $${state.booking.total.toLocaleString()}`;
+
+        hide(form);
+        show(successEl);
+        populateInvoice();
+      } else {
+        alert(data.error || 'Booking failed on server.');
+      }
+    } catch(err) {
+      alert('Network error during booking.');
+    }
   });
 
   $('#btn-add-booking').addEventListener('click', () => {
@@ -665,22 +693,26 @@ function showToast(message, duration = 3000) {
 /* ============================================================
    10. STAFF WORKSPACE — ROOM STATUS GRID
    ============================================================ */
-function initStaffWorkspace() {
+async function initStaffWorkspace() {
   const grid = $('#room-grid');
 
-  // Generate 30 rooms across 3 floors
-  const rooms = [];
-  const statuses = ['available', 'occupied', 'available', 'maintenance', 'available'];
-  for (let floor = 1; floor <= 3; floor++) {
-    for (let num = 1; num <= 10; num++) {
-      const roomNum = floor * 100 + num;
-      const status  = statuses[(roomNum) % statuses.length];
-      rooms.push({ number: roomNum, status });
+  // EDIT: Fetch live room status from the database instead of static array
+  let rooms = [];
+  try {
+    const res = await fetch('api/room_fetch.php');
+    const data = await res.json();
+    if (data.success && data.rooms.length > 0) {
+      rooms = data.rooms;
+    } else {
+      // Fallback empty array if DB is empty
     }
+  } catch (err) {
+    console.warn('Backend fetch failed. No rooms loaded.');
   }
 
   const CYCLE = ['available', 'occupied', 'maintenance'];
   const LABELS = { available: 'Open', occupied: 'Busy', maintenance: 'Maint.' };
+  grid.innerHTML = '';
 
   rooms.forEach(room => {
     const card = document.createElement('div');
@@ -691,13 +723,30 @@ function initStaffWorkspace() {
     card.innerHTML = `<span class="room-card-num">${room.number}</span>
                       <span class="room-card-label">${LABELS[room.status]}</span>`;
 
-    function cycleStatus() {
+    // EDIT: Make cycleStatus async to push database updates back to the API
+    async function cycleStatus() {
       const idx = CYCLE.indexOf(room.status);
-      room.status = CYCLE[(idx + 1) % CYCLE.length];
-      card.className = `room-card ${room.status}`;
-      card.querySelector('.room-card-label').textContent = LABELS[room.status];
-      card.setAttribute('aria-label', `Room ${room.number}: ${room.status}. Click to change status.`);
-      showToast(`Room ${room.number} → ${room.status}`);
+      const nextStatus = CYCLE[(idx + 1) % CYCLE.length];
+      
+      try {
+        const res = await fetch('api/room_update.php', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ roomNumber: room.number, status: nextStatus })
+        });
+        const data = await res.json();
+        if (data.success) {
+          room.status = nextStatus;
+          card.className = `room-card ${room.status}`;
+          card.querySelector('.room-card-label').textContent = LABELS[room.status];
+          card.setAttribute('aria-label', `Room ${room.number}: ${room.status}. Click to change status.`);
+          showToast(`Room ${room.number} → ${room.status}`);
+        } else {
+          alert('Failed to update room on server.');
+        }
+      } catch(err) {
+        alert('Network error updating room status.');
+      }
     }
 
     card.addEventListener('click', cycleStatus);
@@ -721,7 +770,7 @@ function initStaffWorkspace() {
     $('#ci-checkout-date').min = $('#ci-checkin-date').value;
   });
 
-  form.addEventListener('submit', e => {
+  form.addEventListener('submit', async e => {
     e.preventDefault();
     if (!validateForm(form)) return;
 
@@ -729,11 +778,33 @@ function initStaffWorkspace() {
     const roomNum    = $('#ci-room-number').value;
     const action     = $('#ci-action').value;
     const actionVerb = action === 'checkin' ? 'checked in' : 'checked out';
-
-    msgEl.textContent = `${guestName} successfully ${actionVerb} — Room ${roomNum}.`;
-    hide(form);
-    show(successEl);
-    showToast(`Room ${roomNum}: ${guestName} ${actionVerb}`);
+    
+    // EDIT: Added fetch to api/room_update.php to reflect check-in/out on the backend
+    try {
+      // Assuming check-in means occupied, check-out means available
+      const newStatus = action === 'checkin' ? 'occupied' : 'available';
+      
+      const res = await fetch('api/room_update.php', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ roomNumber: roomNum, status: newStatus, action: action, guestName: guestName })
+      });
+      const data = await res.json();
+      
+      if (data.success) {
+        msgEl.textContent = `${guestName} successfully ${actionVerb} — Room ${roomNum}.`;
+        hide(form);
+        show(successEl);
+        showToast(`Room ${roomNum}: ${guestName} ${actionVerb}`);
+        
+        // Refresh grid visually
+        initStaffWorkspace();
+      } else {
+        alert(data.error || 'Server error on check-in/out.');
+      }
+    } catch(err) {
+      alert('Network error during check-in/out.');
+    }
   });
 }
 
