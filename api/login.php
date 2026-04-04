@@ -20,7 +20,7 @@ if (empty($email) || empty($password) || empty($role)) {
 }
 
 try {
-    $stmt = $pdo->prepare("SELECT * FROM User WHERE username = ? AND role = ?");
+    $stmt = $pdo->prepare("SELECT * FROM `user` WHERE username = ? AND role = ?");
     $stmt->execute([$email, $role]);
     $user = $stmt->fetch();
 
@@ -30,7 +30,7 @@ try {
         
         // If the user is a guest, fetch their full name from the Guest table
         if ($role === 'guest') {
-            $stmtGuest = $pdo->prepare("SELECT fullName FROM Guest WHERE email = ?");
+            $stmtGuest = $pdo->prepare("SELECT fullName FROM `guest` WHERE email = ?");
             $stmtGuest->execute([$email]);
             $guest = $stmtGuest->fetch();
             if ($guest) {

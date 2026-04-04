@@ -307,7 +307,8 @@ function initAuth() {
         showError($('#login-password'), data.error || 'Login failed.');
       }
     } catch (err) {
-      showError($('#login-password'), 'Network error. Please try again.');
+      console.error('Fetch error:', err);
+      showError($('#login-password'), 'Network error: ' + err.message);
     } finally {
       btn.textContent = originalText;
       btn.disabled = false;
@@ -346,7 +347,8 @@ function initAuth() {
         showError($('#reg-email'), data.error || 'Registration failed.');
       }
     } catch (err) {
-      showError($('#reg-email'), 'Network error. Please try again.');
+      console.error('Fetch error:', err);
+      showError($('#reg-email'), 'Network error: ' + err.message);
     } finally {
       btn.textContent = originalText;
       btn.disabled = false;
