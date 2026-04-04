@@ -23,7 +23,7 @@ if (empty($name) || empty($email) || empty($password) || empty($role)) {
 
 try {
     // Check if email already exists
-    $stmt = $pdo->prepare("SELECT userID FROM `user` WHERE username = ?");
+    $stmt = $pdo->prepare("SELECT userID FROM `User` WHERE username = ?");
     $stmt->execute([$email]);
     if ($stmt->fetch()) {
         echo json_encode(['success' => false, 'error' => 'Email is already registered.']);
@@ -35,13 +35,13 @@ try {
     // 1. Create the User (for Authentication)
     // We store email as username in the User table as it uniquely identifies logins
     $hashedPassword = password_hash($password, PASSWORD_DEFAULT);
-    $stmt = $pdo->prepare("INSERT INTO `user` (username, password, role) VALUES (?, ?, ?)");
+    $stmt = $pdo->prepare("INSERT INTO `User` (username, password, role) VALUES (?, ?, ?)");
     $stmt->execute([$email, $hashedPassword, $role]);
     $userId = $pdo->lastInsertId();
 
     // 2. If the user is a guest, add them to the Guest table as well
     if ($role === 'guest') {
-        $stmtGuest = $pdo->prepare("INSERT INTO `guest` (fullName, email, phoneNumber) VALUES (?, ?, ?)");
+        $stmtGuest = $pdo->prepare("INSERT INTO `Guest` (fullName, email, phoneNumber) VALUES (?, ?, ?)");
         $stmtGuest->execute([$name, $email, $phone]);
     }
 
