@@ -1,8 +1,6 @@
 <?php
 // api/room_update.php
-// Updates the status of a room in the Room table.
-// Called with: { roomNumber: <roomID>, status: 'available'|'occupied'|'maintenance' }
-//
+// Updates status of a room identified by its roomNumber (e.g. 301, 502, 701).
 header('Content-Type: application/json');
 header('Access-Control-Allow-Origin: *');
 header('Access-Control-Allow-Methods: POST');
@@ -16,22 +14,22 @@ if (!$data) {
     exit;
 }
 
-// JS sends roomNumber (which is actually roomID) and status
-$roomID = isset($data['roomNumber']) ? (int)$data['roomNumber'] : 0;
-$status = trim($data['status'] ?? '');
+// JS sends roomNumber (the display number like 301, 502, 701) and the new status
+$roomNumber = isset($data['roomNumber']) ? (int)$data['roomNumber'] : 0;
+$status     = trim($data['status'] ?? '');
 
 $allowedStatuses = ['available', 'occupied', 'maintenance'];
-if ($roomID <= 0 || !in_array($status, $allowedStatuses)) {
-    echo json_encode(['success' => false, 'error' => 'Invalid room ID or status value.']);
+if ($roomNumber < 301 || $roomNumber > 720 || !in_array($status, $allowedStatuses)) {
+    echo json_encode(['success' => false, 'error' => 'Invalid room number or status value.']);
     exit;
 }
 
 try {
-    $stmt = $pdo->prepare("UPDATE `Room` SET status = ? WHERE roomID = ?");
-    $stmt->execute([$status, $roomID]);
+    $stmt = $pdo->prepare("UPDATE `Room` SET status = ? WHERE roomNumber = ?");
+    $stmt->execute([$status, $roomNumber]);
 
     if ($stmt->rowCount() === 0) {
-        echo json_encode(['success' => false, 'error' => 'Room not found.']);
+        echo json_encode(['success' => false, 'error' => "Room {$roomNumber} not found."]);
         exit;
     }
 

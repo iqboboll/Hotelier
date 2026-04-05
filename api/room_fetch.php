@@ -1,8 +1,6 @@
 <?php
 // api/room_fetch.php
-// Fetches all rooms from the Room table.
-// Returns: { success: true, rooms: [ { number, roomType, status }, ... ] }
-//
+// Returns all rooms with their display roomNumber (e.g. 301, 302 ... 720)
 header('Content-Type: application/json');
 header('Access-Control-Allow-Origin: *');
 header('Access-Control-Allow-Methods: GET');
@@ -10,8 +8,12 @@ header('Access-Control-Allow-Headers: Content-Type');
 require_once 'db.php';
 
 try {
-    // roomID is aliased as 'number' to match what script.js expects (room.number)
-    $stmt = $pdo->query("SELECT roomID as number, roomType, status FROM `Room` ORDER BY roomID ASC");
+    // Return roomNumber as 'number' — this is what script.js uses as room.number
+    $stmt = $pdo->query(
+        "SELECT roomNumber as number, roomType, priceRate, status
+         FROM `Room`
+         ORDER BY roomNumber ASC"
+    );
     $rooms = $stmt->fetchAll();
 
     echo json_encode(['success' => true, 'rooms' => $rooms]);
