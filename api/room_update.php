@@ -1,6 +1,12 @@
 <?php
-// EDIT: Connected this PHP endpoint to update room status via Staff UI or check-in forms
+// api/room_update.php
+// Updates the status of a room in the Room table.
+// Called with: { roomNumber: <roomID>, status: 'available'|'occupied'|'maintenance' }
+//
 header('Content-Type: application/json');
+header('Access-Control-Allow-Origin: *');
+header('Access-Control-Allow-Methods: POST');
+header('Access-Control-Allow-Headers: Content-Type');
 require_once 'db.php';
 
 $data = json_decode(file_get_contents('php://input'), true);
@@ -10,25 +16,27 @@ if (!$data) {
     exit;
 }
 
-$roomNum = $data['roomNumber'] ?? '';
-$status  = $data['status'] ?? ''; // available, occupied, maintenance
-// Optional fields for check-in logic
-$guestName = $data['guestName'] ?? '';
-$action    = $data['action'] ?? '';
+// JS sends roomNumber (which is actually roomID) and status
+$roomID = isset($data['roomNumber']) ? (int)$data['roomNumber'] : 0;
+$status = trim($data['status'] ?? '');
+
+$allowedStatuses = ['available', 'occupied', 'maintenance'];
+if ($roomID <= 0 || !in_array($status, $allowedStatuses)) {
+    echo json_encode(['success' => false, 'error' => 'Invalid room ID or status value.']);
+    exit;
+}
 
 try {
-    // EDIT: Update room status in the database
-    $stmt = $pdo->prepare("UPDATE room SET status = ? WHERE roomNumber = ?");
-    $stmt->execute([$status, $roomNum]);
-    
-    // Check-in logic: if checking in, might also log transaction or guest linkage
-    if ($action === 'checkin' && $guestName) {
-        // EDIT: Example of adding transaction log / check-in tie (assuming transaction table)
-        // $stmtTx = $pdo->prepare("INSERT INTO transaction (guestName, roomNumber, type) VALUES (?, ?, ?)");
-        // $stmtTx->execute([$guestName, $roomNum, 'checkin']);
+    $stmt = $pdo->prepare("UPDATE `Room` SET status = ? WHERE roomID = ?");
+    $stmt->execute([$status, $roomID]);
+
+    if ($stmt->rowCount() === 0) {
+        echo json_encode(['success' => false, 'error' => 'Room not found.']);
+        exit;
     }
-    
+
     echo json_encode(['success' => true]);
+
 } catch (Exception $e) {
     echo json_encode(['success' => false, 'error' => 'Failed to update room: ' . $e->getMessage()]);
 }

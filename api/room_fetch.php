@@ -1,16 +1,21 @@
 <?php
-// EDIT: Connected this PHP endpoint to fetch live room statuses
+// api/room_fetch.php
+// Fetches all rooms from the Room table.
+// Returns: { success: true, rooms: [ { number, roomType, status }, ... ] }
+//
 header('Content-Type: application/json');
+header('Access-Control-Allow-Origin: *');
+header('Access-Control-Allow-Methods: GET');
+header('Access-Control-Allow-Headers: Content-Type');
 require_once 'db.php';
 
 try {
-    // EDIT: Select all rooms from the database
-    // Assume columns are roomNumber and status based on script.js
-    $stmt = $pdo->query("SELECT roomNumber as number, status FROM room");
+    // roomID is aliased as 'number' to match what script.js expects (room.number)
+    $stmt = $pdo->query("SELECT roomID as number, roomType, status FROM `Room` ORDER BY roomID ASC");
     $rooms = $stmt->fetchAll();
-    
-    // If table is empty, we return empty array, though normally it's pre-populated
+
     echo json_encode(['success' => true, 'rooms' => $rooms]);
+
 } catch (Exception $e) {
     echo json_encode(['success' => false, 'error' => 'Failed to fetch rooms: ' . $e->getMessage()]);
 }

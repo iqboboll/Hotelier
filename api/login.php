@@ -1,6 +1,9 @@
 <?php
 // api/login.php
 header('Content-Type: application/json');
+header('Access-Control-Allow-Origin: *');
+header('Access-Control-Allow-Methods: POST');
+header('Access-Control-Allow-Headers: Content-Type');
 require_once 'db.php';
 
 $data = json_decode(file_get_contents('php://input'), true);
@@ -10,9 +13,9 @@ if (!$data) {
     exit;
 }
 
-$email = trim($data['email'] ?? '');
+$email    = trim($data['email']    ?? '');
 $password = trim($data['password'] ?? '');
-$role = trim($data['role'] ?? '');
+$role     = trim($data['role']     ?? '');
 
 if (empty($email) || empty($password) || empty($role)) {
     echo json_encode(['success' => false, 'error' => 'Email, password, and role are required.']);
@@ -25,9 +28,9 @@ try {
     $user = $stmt->fetch();
 
     if ($user && password_verify($password, $user['password'])) {
-        
+
         $name = 'User';
-        
+
         // If the user is a guest, fetch their full name from the Guest table
         if ($role === 'guest') {
             $stmtGuest = $pdo->prepare("SELECT fullName FROM `Guest` WHERE email = ?");
@@ -37,20 +40,21 @@ try {
                 $name = $guest['fullName'];
             }
         } else {
-            // For staff/admin, derive name from email for now (or could add a staff table later)
+            // For staff/admin, derive display name from the email prefix
             $name = ucfirst(explode('@', $email)[0]);
         }
 
         echo json_encode([
             'success' => true,
-            'user' => [
-                'name' => $name,
+            'user'    => [
+                'name'  => $name,
                 'email' => $email,
-                'role' => $role
+                'role'  => $role
             ]
         ]);
+
     } else {
-        echo json_encode(['success' => false, 'error' => 'Invalid credentials or role.']);
+        echo json_encode(['success' => false, 'error' => 'Invalid email, password, or role.']);
     }
 
 } catch (Exception $e) {

@@ -502,11 +502,18 @@ function initGuestBooking() {
     const co     = new Date(checkout.value);
     const nights = Math.round((co - ci) / 86400000);
 
-    // EDIT: Prepare booking payload for backend
+    // Map JS room type keys to the exact roomType strings stored in the DB Room table
+    const ROOM_TYPE_MAP = {
+      standard:  'Standard Room',
+      deluxe:    'Deluxe Room',
+      suite:     'Executive Suite',
+      penthouse: 'Penthouse'
+    };
+
     const bookingData = {
       guestName:  $('#book-guest-name').value.trim(),
       email:      $('#book-guest-email').value.trim(),
-      roomType:   roomType.value,
+      roomType:   ROOM_TYPE_MAP[roomType.value] || roomType.value,
       checkin:    checkin.value,
       checkout:   checkout.value,
       nights,
