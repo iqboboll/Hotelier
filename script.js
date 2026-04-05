@@ -767,6 +767,7 @@ async function initFacilities() {
     state.booking.facilityPrices = { ...state.selectedFacilities };
     closeModal();
     showToast(`Facilities saved: ${state.booking.facilities.join(', ') || 'None'}`);
+    populateInvoice();
   });
 
   updateFacilitySummary();
