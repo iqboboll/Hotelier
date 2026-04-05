@@ -1047,7 +1047,18 @@ function populateInvoice() {
   const emptyState = $('#empty-invoice-state');
   const invoicePan = $('#invoice-panel');
 
-  if (!b.guestName || b.total === 0) {
+  const facilityPrices = state.booking.facilityPrices || {};
+  let facilitySum = 0;
+  Object.entries(facilityPrices).forEach(([key, price]) => {
+    if (price > 0) {
+      facilitySum += price;
+    }
+  });
+
+  const hasRoom = b.total > 0;
+  const hasFacility = facilitySum > 0;
+
+  if (!b.guestName || (!hasRoom && !hasFacility)) {
     if (emptyState) show(emptyState);
     if (invoicePan) {
       hide(invoicePan);
@@ -1067,6 +1078,11 @@ function populateInvoice() {
     }
   }
 
+  const roomRowInfo = $('#inv-nights');
+  if (roomRowInfo && roomRowInfo.parentElement) {
+    roomRowInfo.parentElement.style.display = hasRoom ? '' : 'none';
+  }
+
   $('#inv-guest-name').textContent  = b.guestName  || '—';
   $('#inv-guest-email').textContent = b.guestEmail || '—';
   $('#inv-nights').textContent      = b.nights ? `${b.nights} night${b.nights !== 1 ? 's' : ''}` : '—';
@@ -1077,11 +1093,8 @@ function populateInvoice() {
   const tbody = $('#inv-items');
   $$('.inv-facility-row', tbody).forEach(r => r.remove());
 
-  const facilityPrices = state.booking.facilityPrices || {};
-  let facilitySum = 0;
   Object.entries(facilityPrices).forEach(([key, price]) => {
     if (price > 0) {
-      facilitySum += price;
       const tr = document.createElement('tr');
       tr.className = 'inv-facility-row';
       tr.innerHTML = `<td>${key.charAt(0).toUpperCase() + key.slice(1)}</td><td>1</td><td>RM ${price}</td><td>RM ${price}</td>`;
