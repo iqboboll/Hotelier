@@ -384,6 +384,7 @@ function loginUser({ name, email, role }) {
 
   // Hide the CTA strip at the bottom after valid login
   hide($('#cta-strip'));
+  hide($('#btn-signin'));
 }
 
 // Logout
@@ -395,6 +396,7 @@ $('#btn-logout').addEventListener('click', () => {
 
   // Show the CTA strip again
   show($('#cta-strip'));
+  show($('#btn-signin'));
 
   // Reset form states
   $$('form').forEach(f => f.reset());
