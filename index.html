@@ -93,7 +93,7 @@
             <div class="room-showcase-body">
               <div class="room-showcase-header">
                 <h3>Standard Room</h3>
-                <span class="room-showcase-price">$80<small>/night</small></span>
+                <span class="room-showcase-price">RM 80<small>/night</small></span>
               </div>
               <p>A well-appointed room with all essential amenities for a comfortable stay.</p>
               <ul class="room-amenities">
@@ -111,7 +111,7 @@
             <div class="room-showcase-body">
               <div class="room-showcase-header">
                 <h3>Deluxe Room</h3>
-                <span class="room-showcase-price">$150<small>/night</small></span>
+                <span class="room-showcase-price">RM 150<small>/night</small></span>
               </div>
               <p>Upgraded furnishings, city or garden views, and premium bedding for a superior rest.</p>
               <ul class="room-amenities">
@@ -129,7 +129,7 @@
             <div class="room-showcase-body">
               <div class="room-showcase-header">
                 <h3>Executive Suite</h3>
-                <span class="room-showcase-price">$250<small>/night</small></span>
+                <span class="room-showcase-price">RM 250<small>/night</small></span>
               </div>
               <p>A spacious living room, executive desk, and sweeping panoramic city views.</p>
               <ul class="room-amenities">
@@ -146,7 +146,7 @@
             <div class="room-showcase-body">
               <div class="room-showcase-header">
                 <h3>Penthouse</h3>
-                <span class="room-showcase-price">$500<small>/night</small></span>
+                <span class="room-showcase-price">RM 500<small>/night</small></span>
               </div>
               <p>The pinnacle of luxury. A private rooftop terrace, personal butler, and unrivalled elegance.</p>
               <ul class="room-amenities">
@@ -213,7 +213,8 @@
       <div class="section-inner">
         <p class="section-eyebrow reveal">The Hotel</p>
         <h2 id="layout-heading" class="section-title reveal">Our Hotel Layout</h2>
-        <p class="section-desc reveal">Five floors of thoughtfully designed spaces — 100 rooms across floors 3 to 7 — each crafted to serve you better.
+        <p class="section-desc reveal">Five floors of thoughtfully designed spaces — 100 rooms across floors 3 to 7 —
+          each crafted to serve you better.
         </p>
         <div class="floor-plan">
           <div class="floor-item reveal">
@@ -488,6 +489,8 @@
           <label for="book-guest-email">Email</label>
           <input type="email" id="book-guest-email" name="guestEmail" placeholder="you@example.com" required />
           <span class="field-error" id="err-book-guest-email" role="alert"></span>
+          <span id="email-lock-hint" style="display:none; font-size:0.75rem; color:#a0795a; margin-top:0.25rem;">🔒
+            Locked to your account</span>
         </div>
       </div>
       <div class="form-row">
@@ -495,10 +498,10 @@
           <label for="book-room-type">Room Type</label>
           <select id="book-room-type" name="roomType" required>
             <option value="">-- Select Type --</option>
-            <option value="standard" data-rate="80">Standard Room — $80/night</option>
-            <option value="deluxe" data-rate="150">Deluxe Room — $150/night</option>
-            <option value="suite" data-rate="250">Executive Suite — $250/night</option>
-            <option value="penthouse" data-rate="500">Penthouse — $500/night</option>
+            <option value="standard" data-rate="80">Standard Room — RM 80/night</option>
+            <option value="deluxe" data-rate="150">Deluxe Room — RM 150/night</option>
+            <option value="suite" data-rate="250">Executive Suite — RM 250/night</option>
+            <option value="penthouse" data-rate="500">Penthouse — RM 500/night</option>
           </select>
           <span class="field-error" id="err-book-room-type" role="alert"></span>
         </div>
@@ -567,32 +570,32 @@
       <div class="facility-card" data-facility="gym" data-price="20" role="button" tabindex="0" aria-pressed="false">
         <h3 class="facility-name">Fitness Center</h3>
         <p class="facility-desc">State-of-the-art gym, open 6 AM – 10 PM.</p>
-        <p class="facility-price">$20 / day</p>
+        <p class="facility-price">RM 20 / day</p>
         <span class="facility-badge">Add</span>
       </div>
       <div class="facility-card" data-facility="spa" data-price="80" role="button" tabindex="0" aria-pressed="false">
         <h3 class="facility-name">Luxury Spa</h3>
         <p class="facility-desc">Full-body massage, sauna & steam room.</p>
-        <p class="facility-price">$80 / session</p>
+        <p class="facility-price">RM 80 / session</p>
         <span class="facility-badge">Add</span>
       </div>
       <div class="facility-card" data-facility="pool" data-price="15" role="button" tabindex="0" aria-pressed="false">
         <h3 class="facility-name">Infinity Pool</h3>
         <p class="facility-desc">Heated outdoor pool with panoramic views.</p>
-        <p class="facility-price">$15 / day</p>
+        <p class="facility-price">RM 15 / day</p>
         <span class="facility-badge">Add</span>
       </div>
       <div class="facility-card" data-facility="airport" data-price="45" role="button" tabindex="0"
         aria-pressed="false">
         <h3 class="facility-name">Airport Pickup</h3>
         <p class="facility-desc">Chauffeured luxury vehicle from/to airport.</p>
-        <p class="facility-price">$45 / transfer</p>
+        <p class="facility-price">RM 45 / transfer</p>
         <span class="facility-badge">Add</span>
       </div>
       <div class="facility-card" data-facility="dining" data-price="60" role="button" tabindex="0" aria-pressed="false">
         <h3 class="facility-name">Fine Dining</h3>
         <p class="facility-desc">Reserve a table at our signature restaurant.</p>
-        <p class="facility-price">$60 / person</p>
+        <p class="facility-price">RM 60 / person</p>
         <span class="facility-badge">Add</span>
       </div>
       <div class="facility-card" data-facility="concierge" data-price="0" role="button" tabindex="0"
@@ -604,7 +607,8 @@
       </div>
     </div>
     <div class="facility-summary" id="fac-summary" aria-live="polite">
-      Selected: <span id="fac-selected-list">None</span> &mdash; <strong>Total: <span id="fac-total">$0</span></strong>
+      Selected: <span id="fac-selected-list">None</span> &mdash; <strong>Total: <span id="fac-total">RM
+          0</span></strong>
     </div>
     <button id="btn-confirm-facilities" class="btn btn-primary btn-full" style="margin-top:1rem;">Confirm
       Selection</button>
@@ -658,7 +662,7 @@
       </div>
       <div class="form-row">
         <div class="form-group">
-          <label for="ci-room-rate">Room Rate ($/night)</label>
+          <label for="ci-room-rate">Room Rate (RM/night)</label>
           <input type="number" id="ci-room-rate" name="rate" placeholder="e.g. 150" min="1" required />
           <span class="field-error" id="err-ci-room-rate" role="alert"></span>
         </div>
@@ -729,7 +733,7 @@
       </div>
       <!-- Revenue Summary -->
       <div class="report-panel">
-        <h3 class="report-panel-title">Monthly Revenue (USD)</h3>
+        <h3 class="report-panel-title">Monthly Revenue (RM)</h3>
         <div class="chart-bar-group" id="chart-revenue" aria-label="Revenue bar chart" role="img"></div>
       </div>
     </div>
@@ -740,7 +744,7 @@
         <p class="stat-label">Avg. Occupancy</p>
       </div>
       <div class="stat-card">
-        <p class="stat-value">$124K</p>
+        <p class="stat-value">RM 124K</p>
         <p class="stat-label">YTD Revenue</p>
       </div>
       <div class="stat-card">
@@ -762,7 +766,7 @@
             <th scope="col">Rooms Available</th>
             <th scope="col">Rooms Occupied</th>
             <th scope="col">Occupancy %</th>
-            <th scope="col">Revenue (USD)</th>
+            <th scope="col">Revenue (RM)</th>
           </tr>
         </thead>
         <tbody>
@@ -771,42 +775,42 @@
             <td>50</td>
             <td>38</td>
             <td>76%</td>
-            <td>$19,200</td>
+            <td>RM 19,200</td>
           </tr>
           <tr>
             <td>February</td>
             <td>50</td>
             <td>42</td>
             <td>84%</td>
-            <td>$22,400</td>
+            <td>RM 22,400</td>
           </tr>
           <tr>
             <td>March</td>
             <td>50</td>
             <td>46</td>
             <td>92%</td>
-            <td>$26,500</td>
+            <td>RM 26,500</td>
           </tr>
           <tr>
             <td>April</td>
             <td>50</td>
             <td>44</td>
             <td>88%</td>
-            <td>$24,800</td>
+            <td>RM 24,800</td>
           </tr>
           <tr>
             <td>May</td>
             <td>50</td>
             <td>47</td>
             <td>94%</td>
-            <td>$28,100</td>
+            <td>RM 28,100</td>
           </tr>
           <tr>
             <td>June</td>
             <td>50</td>
             <td>49</td>
             <td>98%</td>
-            <td>$32,000</td>
+            <td>RM 32,000</td>
           </tr>
         </tbody>
       </table>
@@ -822,13 +826,22 @@
       <p class="modal-subtitle">Digital receipt and guest feedback.</p>
     </div>
     <div class="billing-layout">
+      <!-- Empty State -->
+      <div id="empty-invoice-state" class="hidden"
+        style="text-align: center; padding: 4rem 2rem; background: #faf7f2; border-radius: 8px; border: 1px dashed #d4c5b9; display: flex; flex-direction: column; align-items: center; justify-content: center;">
+        <span style="font-size: 3rem; opacity: 0.5; margin-bottom: 1rem;">🧾</span>
+        <h3 style="color: #2c1a0e; margin-bottom: 0.5rem; font-family: 'Playfair Display', serif;">No Active Booking
+        </h3>
+        <p style="color: #7d7268; font-size: 0.9rem;">You haven't made any room bookings yet.</p>
+      </div>
+
       <!-- Invoice Panel -->
       <div class="invoice-panel" id="invoice-panel">
         <div class="invoice-header">
           <div class="invoice-brand">
             <h3>HOTELIER</h3>
-            <p>123 Luxury Lane, Grand City</p>
-            <p>Tel: +1 800 HOTELIER</p>
+            <p>Jalan Mewah 123, Kuala Lumpur, Malaysia</p>
+            <p>Tel: +60 3-8888 9999</p>
           </div>
           <div class="invoice-meta">
             <p><strong>Invoice #:</strong> <span id="inv-number">HTL-2026-001</span></p>
@@ -863,7 +876,7 @@
               <td id="inv-subtotal">—</td>
             </tr>
             <tr>
-              <td colspan="3" class="inv-label">Tax (10%)</td>
+              <td colspan="3" class="inv-label">SST (6%)</td>
               <td id="inv-tax">—</td>
             </tr>
             <tr class="inv-grand-total">

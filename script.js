@@ -23,7 +23,8 @@ const state = {
     nights: 0,
     rate: 0,
     total: 0,
-    facilities: []
+    facilities: [],
+    facilityPrices: {}     // Snapshot of { key: price } at facilities confirm time
   },
   selectedFacilities: {},  // { facilityKey: priceNumber }
   starRating: 0            // 1–5 overall rating
@@ -66,6 +67,9 @@ function openModal(modalId) {
 
   state.activeModal = modalId;
   document.body.style.overflow = 'hidden';
+
+  // Notify listeners (e.g. booking form pre-fill)
+  document.dispatchEvent(new CustomEvent('modalOpened', { detail: modalId }));
 
   // Focus first focusable element inside modal
   const firstFocusable = modal.querySelector('input, select, button, textarea, [tabindex="0"]');
@@ -471,6 +475,48 @@ function initGuestBooking() {
   checkin.min  = todayISO;
   checkout.min = todayISO;
 
+  // ── Lock email/name to logged-in user (guests may edit freely) ──────────
+  const nameField  = $('#book-guest-name');
+  const emailField = $('#book-guest-email');
+
+  function prefillBookingFields() {
+    const u = state.currentUser;
+    if (!u) return;
+
+    const lockHint = $('#email-lock-hint');
+
+    if (u.role === 'guest') {
+      // Guest: prefill values but allow free editing
+      nameField.value     = u.name;
+      emailField.value    = u.email;
+      nameField.readOnly  = false;
+      emailField.readOnly = false;
+      nameField.removeAttribute('data-locked');
+      emailField.removeAttribute('data-locked');
+      nameField.style.opacity  = '';
+      emailField.style.opacity = '';
+      if (lockHint) lockHint.style.display = 'none';
+    } else {
+      // Registered user: lock both fields to their account
+      nameField.value     = u.name;
+      emailField.value    = u.email;
+      nameField.readOnly  = true;
+      emailField.readOnly = true;
+      nameField.setAttribute('data-locked', 'true');
+      emailField.setAttribute('data-locked', 'true');
+      nameField.style.opacity  = '0.7';
+      emailField.style.opacity = '0.7';
+      if (lockHint) lockHint.style.display = 'block';
+    }
+  }
+
+  // Pre-fill every time the booking modal opens
+  document.addEventListener('modalOpened', e => {
+    if (e.detail === 'modal-guest-booking') prefillBookingFields();
+  });
+  // Also pre-fill immediately in case modal is already open
+  prefillBookingFields();
+
   // Update price display whenever room type or dates change
   function recalcPrice() {
     const opt  = roomType.options[roomType.selectedIndex];
@@ -482,9 +528,9 @@ function initGuestBooking() {
       ? Math.round((co - ci) / 86400000)
       : 0;
 
-    psRate.textContent   = rate ? `$${rate}` : '—';
+    psRate.textContent   = rate ? `RM ${rate}` : '—';
     psNights.textContent = nights ? `${nights} night${nights !== 1 ? 's' : ''}` : '—';
-    psTotal.textContent  = (rate && nights) ? `$${(rate * nights).toLocaleString()}` : '—';
+    psTotal.textContent  = (rate && nights) ? `RM ${(rate * nights).toLocaleString('ms-MY')}` : '—';
   }
 
   roomType.addEventListener('change', recalcPrice);
@@ -546,7 +592,7 @@ function initGuestBooking() {
         };
 
         confirmMsg.textContent =
-          `${state.booking.guestName} — ${state.booking.roomLabel}, ${nights} night${nights !== 1 ? 's' : ''}. Total: $${state.booking.total.toLocaleString()}`;
+          `${state.booking.guestName} — ${state.booking.roomLabel}, ${nights} night${nights !== 1 ? 's' : ''}. Total: RM ${state.booking.total.toLocaleString('ms-MY')}`;
 
         hide(form);
         show(successEl);
@@ -583,7 +629,7 @@ function initGuestBooking() {
     const facSelectedList = $('#fac-selected-list');
     const facTotal = $('#fac-total');
     if (facSelectedList) facSelectedList.textContent = 'None';
-    if (facTotal) facTotal.textContent = '$0';
+    if (facTotal) facTotal.textContent = 'RM 0';
     $$('.facility-card.selected').forEach(c => {
       c.classList.remove('selected');
       c.setAttribute('aria-pressed', 'false');
@@ -606,28 +652,82 @@ function initGuestBooking() {
 /* ============================================================
    8. FACILITIES MODULE
    ============================================================ */
-function initFacilities() {
-  const cards       = $$('.facility-card');
-  const selectedEl  = $('#fac-selected-list');
-  const totalEl     = $('#fac-total');
-  const confirmBtn  = $('#btn-confirm-facilities');
+async function initFacilities() {
+  const grid       = $('#modal-facilities .facility-grid');
+  const selectedEl = $('#fac-selected-list');
+  const totalEl    = $('#fac-total');
+  const confirmBtn = $('#btn-confirm-facilities');
 
+  // Price unit labels — not stored in DB, derived locally
+  const PRICE_UNIT = {
+    gym:       'day',
+    spa:       'session',
+    pool:      'day',
+    airport:   'transfer',
+    dining:    'person',
+    concierge: 'complimentary'
+  };
+
+  // Map DB `type` values → short JS keys (matches static HTML data-facility attrs)
+  // facilID is auto-incremented INT; the type string is the reliable identifier.
+  const TYPE_TO_KEY = {
+    'Fitness Center': 'gym',
+    'Luxury Spa':     'spa',
+    'Infinity Pool':  'pool',
+    'Airport Pickup': 'airport',
+    'Fine Dining':    'dining',
+    'Concierge':      'concierge'
+  };
+
+  // ── Fetch facilities from Facilities table ──────────────────
+  try {
+    const res  = await fetch('api/facility_fetch.php');
+    const data = await res.json();
+
+    if (data.success && data.facilities && data.facilities.length > 0) {
+      // Render cards dynamically using real DB columns:
+      //   facilID   → facility key  (e.g. 'gym')
+      //   type      → display name  (e.g. 'Fitness Center')
+      //   location  → sub-label     (e.g. '4th Floor')
+      //   priceRate → price in RM
+      grid.innerHTML = '';
+      data.facilities.forEach(fac => {
+        // facilID is now auto-increment INT — use type → key mapping instead
+        const key        = TYPE_TO_KEY[fac.type] || fac.type.toLowerCase();
+        const rate       = parseFloat(fac.priceRate) || 0;
+        const unit       = PRICE_UNIT[key] || 'visit';
+        const priceLabel = rate === 0
+          ? 'Complimentary'
+          : `RM ${rate.toFixed(0)} / ${unit}`;
+
+        const card = document.createElement('div');
+        card.className = 'facility-card';
+        card.dataset.facility = key;
+        card.dataset.price    = rate;
+        card.setAttribute('role', 'button');
+        card.setAttribute('tabindex', '0');
+        card.setAttribute('aria-pressed', 'false');
+        card.innerHTML = `
+          <h3 class="facility-name">${fac.type}</h3>
+          <p class="facility-desc">${fac.location}</p>
+          <p class="facility-price">${priceLabel}</p>
+          <span class="facility-badge">Add</span>
+        `;
+        grid.appendChild(card);
+      });
+    }
+    // If the fetch fails or DB is empty, static HTML cards remain visible
+  } catch (err) {
+    console.warn('Facilities fetch failed — using static cards:', err.message);
+  }
+
+  // ── Toggle & summary (works for both static and dynamic cards) ──
   function updateFacilitySummary() {
     const keys = Object.keys(state.selectedFacilities);
     selectedEl.textContent = keys.length ? keys.join(', ') : 'None';
     const sum = keys.reduce((acc, k) => acc + (state.selectedFacilities[k] || 0), 0);
-    totalEl.textContent = `$${sum}`;
+    totalEl.textContent = `RM ${sum}`;
   }
-
-  cards.forEach(card => {
-    card.addEventListener('click', () => toggleFacility(card));
-    card.addEventListener('keydown', e => {
-      if (e.key === 'Enter' || e.key === ' ') {
-        e.preventDefault();
-        toggleFacility(card);
-      }
-    });
-  });
 
   function toggleFacility(card) {
     const key   = card.dataset.facility;
@@ -648,10 +748,24 @@ function initFacilities() {
     updateFacilitySummary();
   }
 
+  // Event delegation — works for dynamically rendered cards
+  grid.addEventListener('click', e => {
+    const card = e.target.closest('.facility-card');
+    if (card) toggleFacility(card);
+  });
+  grid.addEventListener('keydown', e => {
+    const card = e.target.closest('.facility-card');
+    if (card && (e.key === 'Enter' || e.key === ' ')) {
+      e.preventDefault();
+      toggleFacility(card);
+    }
+  });
+
   confirmBtn.addEventListener('click', () => {
-    state.booking.facilities = Object.keys(state.selectedFacilities);
+    state.booking.facilities     = Object.keys(state.selectedFacilities);
+    // Snapshot prices so the invoice has them even after selectedFacilities resets
+    state.booking.facilityPrices = { ...state.selectedFacilities };
     closeModal();
-    // Brief confirmation toast
     showToast(`Facilities saved: ${state.booking.facilities.join(', ') || 'None'}`);
   });
 
@@ -865,12 +979,12 @@ function initReports() {
   ];
 
   const revenueData = [
-    { label: 'Jan', value: 38, display: '$19K' },
-    { label: 'Feb', value: 45, display: '$22K' },
-    { label: 'Mar', value: 53, display: '$27K' },
-    { label: 'Apr', value: 50, display: '$25K' },
-    { label: 'May', value: 56, display: '$28K' },
-    { label: 'Jun', value: 64, display: '$32K' }
+    { label: 'Jan', value: 38, display: 'RM 19K' },
+    { label: 'Feb', value: 45, display: 'RM 22K' },
+    { label: 'Mar', value: 53, display: 'RM 27K' },
+    { label: 'Apr', value: 50, display: 'RM 25K' },
+    { label: 'May', value: 56, display: 'RM 28K' },
+    { label: 'Jun', value: 64, display: 'RM 32K' }
   ];
 
   renderBarChart('#chart-occupancy', occupancyData);
@@ -927,38 +1041,58 @@ function initBilling() {
  */
 function populateInvoice() {
   const b = state.booking;
-  if (!b.guestName) return;
+  const emptyState = $('#empty-invoice-state');
+  const invoicePan = $('#invoice-panel');
+
+  if (!b.guestName || b.total === 0) {
+    if (emptyState) show(emptyState);
+    if (invoicePan) {
+      hide(invoicePan);
+      invoicePan.style.display = 'none';
+      if (emptyState) emptyState.style.display = 'flex';
+    }
+    return;
+  }
+
+  // Active booking exists
+  if (invoicePan) {
+    show(invoicePan);
+    invoicePan.style.display = 'block';
+    if (emptyState) {
+      hide(emptyState);
+      emptyState.style.display = 'none';
+    }
+  }
 
   $('#inv-guest-name').textContent  = b.guestName  || '—';
   $('#inv-guest-email').textContent = b.guestEmail || '—';
   $('#inv-nights').textContent      = b.nights ? `${b.nights} night${b.nights !== 1 ? 's' : ''}` : '—';
-  $('#inv-rate').textContent        = b.rate ? `$${b.rate}/night` : '—';
-  $('#inv-room-total').textContent  = b.total ? `$${b.total.toLocaleString()}` : '—';
+  $('#inv-rate').textContent        = b.rate ? `RM ${b.rate}/night` : '—';
+  $('#inv-room-total').textContent  = b.total ? `RM ${b.total.toLocaleString('ms-MY')}` : '—';
 
-  // Facilities add-ons
+  // Facilities add-ons — read from the price snapshot captured at confirm time
   const tbody = $('#inv-items');
-  // Remove any old facility rows
   $$('.inv-facility-row', tbody).forEach(r => r.remove());
 
+  const facilityPrices = state.booking.facilityPrices || {};
   let facilitySum = 0;
-  b.facilities.forEach(key => {
-    const price = state.selectedFacilities[key] || 0;
+  Object.entries(facilityPrices).forEach(([key, price]) => {
     if (price > 0) {
       facilitySum += price;
       const tr = document.createElement('tr');
       tr.className = 'inv-facility-row';
-      tr.innerHTML = `<td>${key.charAt(0).toUpperCase() + key.slice(1)}</td><td>1</td><td>$${price}</td><td>$${price}</td>`;
+      tr.innerHTML = `<td>${key.charAt(0).toUpperCase() + key.slice(1)}</td><td>1</td><td>RM ${price}</td><td>RM ${price}</td>`;
       tbody.appendChild(tr);
     }
   });
 
   const subtotal = b.total + facilitySum;
-  const tax      = subtotal * 0.1;
+  const tax      = subtotal * 0.06;   // 6% SST (Malaysian Sales & Service Tax)
   const grand    = subtotal + tax;
 
-  $('#inv-subtotal').textContent = `$${subtotal.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
-  $('#inv-tax').textContent      = `$${tax.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
-  $('#inv-grand').textContent    = `$${grand.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+  $('#inv-subtotal').textContent = `RM ${subtotal.toLocaleString('ms-MY', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+  $('#inv-tax').textContent      = `RM ${tax.toLocaleString('ms-MY', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+  $('#inv-grand').textContent    = `RM ${grand.toLocaleString('ms-MY', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
 }
 
 /* ============================================================

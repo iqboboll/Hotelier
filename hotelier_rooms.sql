@@ -1,35 +1,38 @@
 -- ============================================================
--- Hotelier Room Table Rebuild
+-- Hotelier Room Table Rebuild (MySQL 5.7 compatible)
 -- Floor Layout:
---   Floor 3: Standard Room   301–320  (20 rooms)
---   Floor 4: Standard Room   401–420  (20 rooms)
---   Floor 5: Deluxe Room     501–520  (20 rooms)
---   Floor 6: Executive Suite 601–620  (20 rooms)
---   Floor 7: Penthouse       701–720  (20 rooms)
+--   Floor 3: Standard Room   301-320  (20 rooms)
+--   Floor 4: Standard Room   401-420  (20 rooms)
+--   Floor 5: Deluxe Room     501-520  (20 rooms)
+--   Floor 6: Executive Suite 601-620  (20 rooms)
+--   Floor 7: Penthouse       701-720  (20 rooms)
 --   TOTAL: 100 rooms
 -- ============================================================
 
 SET FOREIGN_KEY_CHECKS = 0;
 
--- Step 1: Add roomNumber column if it doesn't already exist
-ALTER TABLE `Room`
-  ADD COLUMN IF NOT EXISTS `roomNumber` INT NOT NULL DEFAULT 0 AFTER `roomID`;
+-- Step 1: Clear all dependent tables first
+DELETE FROM `Transaction`;
+DELETE FROM `Booking`;
+DELETE FROM `Guest`;
+DELETE FROM `Room`;
 
--- Step 2: Clear all dependent data and rooms
-TRUNCATE TABLE `Transaction`;
-TRUNCATE TABLE `Booking`;
-TRUNCATE TABLE `Guest`;
-TRUNCATE TABLE `Room`;
+-- Step 2: Drop roomNumber column if it already exists from a previous run
+--         (this will fail silently in phpMyAdmin if column doesn't exist - that's OK)
+ALTER TABLE `Room` DROP COLUMN `roomNumber`;
 
--- Step 3: Reset auto_increment
+-- Step 3: Add the roomNumber column fresh
+ALTER TABLE `Room` ADD COLUMN `roomNumber` INT NOT NULL DEFAULT 0 AFTER `roomID`;
+
+-- Step 4: Reset auto_increment counters
 ALTER TABLE `Room` AUTO_INCREMENT = 1;
 ALTER TABLE `User` AUTO_INCREMENT = 1;
 
 SET FOREIGN_KEY_CHECKS = 1;
 
--- Step 4: Insert all 100 rooms
+-- Step 5: Insert all 100 rooms with floor-based room numbers
 INSERT INTO `Room` (roomNumber, roomType, priceRate, status) VALUES
--- Floor 3: Standard Rooms (301–320)
+-- Floor 3: Standard Rooms (301-320)
 (301, 'Standard Room', 80.00, 'available'),
 (302, 'Standard Room', 80.00, 'available'),
 (303, 'Standard Room', 80.00, 'available'),
@@ -50,7 +53,7 @@ INSERT INTO `Room` (roomNumber, roomType, priceRate, status) VALUES
 (318, 'Standard Room', 80.00, 'available'),
 (319, 'Standard Room', 80.00, 'available'),
 (320, 'Standard Room', 80.00, 'available'),
--- Floor 4: Standard Rooms (401–420)
+-- Floor 4: Standard Rooms (401-420)
 (401, 'Standard Room', 80.00, 'available'),
 (402, 'Standard Room', 80.00, 'available'),
 (403, 'Standard Room', 80.00, 'available'),
@@ -71,7 +74,7 @@ INSERT INTO `Room` (roomNumber, roomType, priceRate, status) VALUES
 (418, 'Standard Room', 80.00, 'available'),
 (419, 'Standard Room', 80.00, 'available'),
 (420, 'Standard Room', 80.00, 'available'),
--- Floor 5: Deluxe Rooms (501–520)
+-- Floor 5: Deluxe Rooms (501-520)
 (501, 'Deluxe Room', 150.00, 'available'),
 (502, 'Deluxe Room', 150.00, 'available'),
 (503, 'Deluxe Room', 150.00, 'available'),
@@ -92,7 +95,7 @@ INSERT INTO `Room` (roomNumber, roomType, priceRate, status) VALUES
 (518, 'Deluxe Room', 150.00, 'available'),
 (519, 'Deluxe Room', 150.00, 'available'),
 (520, 'Deluxe Room', 150.00, 'available'),
--- Floor 6: Executive Suites (601–620)
+-- Floor 6: Executive Suites (601-620)
 (601, 'Executive Suite', 250.00, 'available'),
 (602, 'Executive Suite', 250.00, 'available'),
 (603, 'Executive Suite', 250.00, 'available'),
@@ -113,7 +116,7 @@ INSERT INTO `Room` (roomNumber, roomType, priceRate, status) VALUES
 (618, 'Executive Suite', 250.00, 'available'),
 (619, 'Executive Suite', 250.00, 'available'),
 (620, 'Executive Suite', 250.00, 'available'),
--- Floor 7: Penthouses (701–720)
+-- Floor 7: Penthouses (701-720)
 (701, 'Penthouse', 500.00, 'available'),
 (702, 'Penthouse', 500.00, 'available'),
 (703, 'Penthouse', 500.00, 'available'),
@@ -134,6 +137,3 @@ INSERT INTO `Room` (roomNumber, roomType, priceRate, status) VALUES
 (718, 'Penthouse', 500.00, 'available'),
 (719, 'Penthouse', 500.00, 'available'),
 (720, 'Penthouse', 500.00, 'available');
-
--- Verify
-SELECT roomNumber, roomType, priceRate, status FROM `Room` ORDER BY roomNumber ASC;
